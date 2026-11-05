@@ -1,0 +1,17 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BACKEND_API_URL: ${BACKEND_API_URL:-http://host.docker.internal:5000}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BACKEND_API_URL: ${BACKEND_API_URL:-http://host.docker.internal:5000}
+    ports:
+      - "${CLIENT_PORT:-3003}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -12,6 +12,16 @@ The Next.js server proxies `/backend-api/*` to `${BACKEND_API_URL}/api/*`, so br
 
 The API schema currently has no authentication. Do not expose user-management endpoints publicly until authentication and authorization have been implemented.
 
+## Dockerize the client separately
+
+Start the Express API and MongoDB first from `../aics-booking-api` with its Docker Compose setup. Then, from this client directory, run:
+
+```sh
+docker compose up --build -d
+```
+
+Open the client at `http://localhost:3003`. The client Compose file routes API requests to the backend published on host port 5000. Set `BACKEND_API_URL` or `CLIENT_PORT` in a local `.env` file to override the defaults. Stop the client container with `docker compose down`.
+
 ## Run the full stack with Docker
 
-From `../aics-booking-api`, copy its `.env.example` to `.env`, update the local credentials, and run `docker compose up --build`. Open the client at `http://localhost:3002`. The Compose stack also exposes the API at port 5000 and Mongo Express at port 8082. Set `CLIENT_PORT` or `MONGO_EXPRESS_PORT` in the API `.env` to override those host ports. Stop the stack with `docker compose down`.
+Alternatively, from `../aics-booking-api`, run `docker compose up --build -d`. This starts the client with the API and MongoDB at `http://localhost:3002`; Mongo Express is at `http://localhost:8082`. Stop that stack from the API directory with `docker compose down`.
