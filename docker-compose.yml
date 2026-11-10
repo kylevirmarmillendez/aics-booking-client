@@ -1,0 +1,19 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BACKEND_API_URL: ${BACKEND_API_URL:-http://host.docker.internal:8000}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BACKEND_API_URL: ${BACKEND_API_URL:-http://host.docker.internal:8000}
+    ports:
+      # Use 3002 to avoid the full-stack client (3000) and local Next dev server (3001).
+      # Set CLIENT_PORT=3000 when those other clients are stopped.
+      - "${CLIENT_PORT:-3002}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

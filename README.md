@@ -15,3 +15,13 @@ Open `/login` to sign in or `/register` to create an account. Successful login a
 ## Run the Dockerized app
 
 From `../aics-booking-api`, run `docker compose up --build -d`. Open the client at `http://localhost:3000`; the Express API is at `http://localhost:8000`. Stop the stack with `docker compose down`.
+
+## Run only the client with Compose
+
+With the Express API running on host port 8000, run this from the client directory:
+
+```sh
+docker compose up --build -d
+```
+
+The standalone client is at `http://localhost:3002` by default, since the full-stack Compose app uses host port 3000. Copy `.env.example` to `.env` to override `BACKEND_API_URL` or `CLIENT_PORT`. To bind the standalone client to `http://localhost:3000`, stop the full-stack client first or set `CLIENT_PORT=3000` when starting this Compose project. Stop it with `docker compose down` from this directory.
