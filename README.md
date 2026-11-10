@@ -1,6 +1,6 @@
 # AICS Booking Client
 
-Next.js App Router client for the AICS user directory. User list, profile, create, and delete requests are sent to the Express API; MongoDB is the source of truth (not browser local storage).
+Next.js App Router client for the AICS user directory. Login, registration, and user CRUD run in this React application and use Passport session authentication from the Express API; MongoDB is the source of truth.
 
 ## Run with the API
 
@@ -10,18 +10,8 @@ Next.js App Router client for the AICS user directory. User list, profile, creat
 
 The Next.js server proxies `/backend-api/*` to `${BACKEND_API_URL}/api/*`, so browser requests are same-origin. Restart Next.js after changing `.env.local`. User records created before this connection in browser local storage are not imported into MongoDB.
 
-The API schema currently has no authentication. Do not expose user-management endpoints publicly until authentication and authorization have been implemented.
+Open `/login` to sign in or `/register` to create an account. Successful login and registration redirect to the protected user directory. The API uses an HTTP-only session cookie and CSRF tokens; logout destroys the server-side session. For local Docker, set a private `SESSION_SECRET` in the API `.env` before sharing the environment. Registered accounts receive the standard user role.
 
-## Dockerize the client separately
+## Run the Dockerized app
 
-Start the Express API and MongoDB first from `../aics-booking-api` with its Docker Compose setup. Then, from this client directory, run:
-
-```sh
-docker compose up --build -d
-```
-
-Open the client at `http://localhost:3003`. The client Compose file routes API requests to the backend published on host port 5000. Set `BACKEND_API_URL` or `CLIENT_PORT` in a local `.env` file to override the defaults. Stop the client container with `docker compose down`.
-
-## Run the full stack with Docker
-
-Alternatively, from `../aics-booking-api`, run `docker compose up --build -d`. This starts the client with the API and MongoDB at `http://localhost:3002`; Mongo Express is at `http://localhost:8082`. Stop that stack from the API directory with `docker compose down`.
+From `../aics-booking-api`, run `docker compose up --build -d`. Open the client at `http://localhost:3000`; the Express API is at `http://localhost:8000`. Stop the stack with `docker compose down`.

@@ -2,6 +2,7 @@
 
 import type { UserRecord } from './users';
 import type { UserRole, UserStatus } from './users';
+import { getCsrfToken } from './authApi';
 
 export interface CreateUserInput {
   fname: string;
@@ -57,9 +58,15 @@ const USERS_ENDPOINT = '/backend-api/users';
 async function request<T>(path = '', init?: RequestInit): Promise<T> {
   let response: Response;
   try {
+    const method = init?.method?.toUpperCase() ?? 'GET';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      headers['X-CSRF-Token'] = await getCsrfToken();
+    }
     response = await fetch(`${USERS_ENDPOINT}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      credentials: 'include',
+      headers: { ...headers, ...init?.headers },
       cache: 'no-store'
     });
   } catch {
