@@ -9,13 +9,16 @@ import { type AuthUser, getCurrentUser, signOut } from '@/lib/authApi';
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authError, setAuthError] = useState('');
   const [signingOut, setSigningOut] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
-    if (pathname === '/login' || pathname === '/register') {
+    if (pathname === '/login' || pathname === '/register' || pathname === '/aics-appointment-booking') {
       setCheckingAuth(false);
       return;
     }
@@ -41,9 +44,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => { active = false; };
   }, [pathname, router]);
 
-  if (pathname === '/login' || pathname === '/register') return <>{children}</>;
+  if (pathname === '/login' || pathname === '/register' || pathname === '/aics-appointment-booking') return <>{children}</>;
 
-  if (checkingAuth) {
+  if (!mounted || checkingAuth) {
     return <div className="grid min-h-screen place-items-center bg-[#f6f7ff] text-sm text-slate-500"><span className="flex items-center gap-3"><LoaderCircle size={20} className="animate-spin text-[#2e3192]" />Verifying secure session…</span></div>;
   }
 

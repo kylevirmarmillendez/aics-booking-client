@@ -12,6 +12,8 @@ The Next.js server proxies `/backend-api/*` to `${BACKEND_API_URL}/api/*`, so br
 
 Open `/login` to sign in or `/register` to create an account. Successful login and registration redirect to the protected user directory. The API uses an HTTP-only session cookie and CSRF tokens; logout destroys the server-side session. For local Docker, set a private `SESSION_SECRET` in the API `.env` before sharing the environment. Registered accounts receive the standard user role.
 
+Open `/aics-appointment-booking` for the public AICS appointment form. It does not require staff authentication. Public booking, availability, lookup, and cancellation are handled by the API; configure optional Google Calendar and SMTP settings in the API `.env` to enable event and email notifications.
+
 ## Run the Dockerized app
 
 From `../aics-booking-api`, run `docker compose up --build -d`. Open the client at `http://localhost:3000`; the Express API is at `http://localhost:8000`. Stop the stack with `docker compose down`.
