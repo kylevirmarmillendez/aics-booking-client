@@ -15,9 +15,9 @@ export function PageHeader({ eyebrow, title, description, actions }) {
 
 export function Button({ children, variant = 'primary', className = '', ...props }) {
   const variants = {
-    primary: 'bg-dswd-blue text-white shadow-sm hover:bg-dswd-blue-dark focus-visible:ring-dswd-blue/30',
+    primary: 'bg-dswd-blue text-white shadow-sm hover:bg-dswd-blue/90 focus-visible:ring-dswd-blue/30',
     secondary: 'border border-dswd-blue/20 bg-white text-slate-700 hover:border-dswd-blue/40 hover:bg-dswd-blue/[0.03]',
-    danger: 'bg-dswd-red text-white hover:bg-dswd-red-dark'
+    danger: 'bg-dswd-red text-white hover:bg-dswd-red/90'
   };
   return (
     <button className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`} {...props}>
@@ -31,9 +31,9 @@ export function Card({ children, className = '' }) {
 }
 
 const statusStyles = {
-  Active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15',
-  Pending: 'bg-dswd-yellow-soft text-slate-700 ring-dswd-yellow/70',
-  Inactive: 'bg-slate-100 text-slate-600 ring-slate-500/10'
+  Active: 'bg-dswd-blue/10 text-dswd-blue ring-dswd-blue/25',
+  Pending: 'bg-dswd-yellow/30 text-slate-800 ring-dswd-yellow',
+  Inactive: 'bg-dswd-red/10 text-dswd-red ring-dswd-red/20'
 };
 
 export function StatusBadge({ status }) {
@@ -79,7 +79,7 @@ export function Alert({ children, variant = 'error' }) {
   const success = variant === 'success';
   const Icon = success ? Check : AlertCircle;
   return (
-    <div role={success ? 'status' : 'alert'} className={`flex gap-3 rounded-xl border p-4 text-sm ${success ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-dswd-red/20 bg-dswd-red/[0.05] text-dswd-red-dark'}`}>
+    <div role={success ? 'status' : 'alert'} className={`flex gap-3 rounded-xl border p-4 text-sm ${success ? 'border-dswd-blue/20 bg-dswd-blue/[0.05] text-dswd-blue' : 'border-dswd-red/20 bg-dswd-red/[0.05] text-dswd-red'}`}>
       <Icon size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
       <div>{children}</div>
     </div>

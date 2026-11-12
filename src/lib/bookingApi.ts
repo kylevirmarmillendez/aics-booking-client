@@ -2,8 +2,24 @@
 
 import { getCsrfToken } from './authApi';
 
-export type AssistanceType = 'Medical' | 'Funeral';
-export type BookingStatus = 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+export interface AssistanceType {
+  code: string;
+  name: string;
+  requirements: string[];
+}
+export interface BookingOffice {
+  slug: string;
+  name: string;
+  officeType: string;
+  province: string;
+  city: string;
+  address: string;
+  contacts: string[];
+  dailyCapacity: number;
+  amCapacity: number;
+  pmCapacity: number;
+}
+export type BookingStatus = 'Pending' | 'Confirmed' | 'Arrived' | 'No-show' | 'Completed' | 'Cancelled';
 
 export interface BookingRules {
   minDate: string;
@@ -18,16 +34,26 @@ export interface BookingRules {
 
 export interface Availability {
   selectedDate: string;
+  officeSlug: string;
+  officeName: string;
   availableSlots: string[];
+  periodRemaining: Record<string, number>;
   remainingSlots: number;
   dailyCapacity: number;
+  periodCapacities: Record<string, number>;
   isFullyBooked: boolean;
 }
 
 export interface PublicAppointment {
   appointmentCode: string;
   assistanceType: string;
+  officeSlug: string;
+  officeName: string;
   fullName: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  birthdate: string;
   email: string;
   cellNumber: string;
   appointmentDate: string;
@@ -95,13 +121,26 @@ export function getBookingRules() {
   return request<BookingRules>('/calendar-rules');
 }
 
-export function getAvailability(date: string) {
-  return request<Availability>(`/availability?date=${encodeURIComponent(date)}`);
+export function getAssistanceTypes() {
+  return request<AssistanceType[]>('/assistance-types');
+}
+
+export function getBookingOffices() {
+  return request<BookingOffice[]>('/offices');
+}
+
+export function getAvailability(date: string, officeSlug: string) {
+  const params = new URLSearchParams({ date, officeSlug });
+  return request<Availability>(`/availability?${params.toString()}`);
 }
 
 export function createBooking(input: {
-  typeOfAssistance: AssistanceType;
-  fullName: string;
+  typeOfAssistance: string;
+  officeSlug: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  birthdate: string;
   cellNumber: string;
   email: string;
   appointmentDate: string;

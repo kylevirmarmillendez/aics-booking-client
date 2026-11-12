@@ -6,11 +6,8 @@ export default {
       colors: {
         dswd: {
           blue: '#2e3192',
-          'blue-dark': '#23256f',
           yellow: '#fef200',
-          'yellow-soft': '#fff9b8',
           red: '#ee1c25',
-          'red-dark': '#b9151c',
           canvas: '#f6f7ff'
         }
       },

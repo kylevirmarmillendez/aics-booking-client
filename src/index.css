@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root {
+  --dswd-blue: #2e3192;
+  --dswd-red: #ee1c25;
+  --dswd-yellow: #fef200;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1e293b;
   background: #f6f7ff;
@@ -19,4 +22,4 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   outline: 3px solid rgba(46, 49, 146, 0.28);
   outline-offset: 2px;
 }
-::selection { color: #23256f; background: #fff9b8; }
+::selection { color: #1e293b; background: var(--dswd-yellow); }

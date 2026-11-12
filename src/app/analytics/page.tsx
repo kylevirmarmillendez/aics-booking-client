@@ -44,7 +44,7 @@ const bookings: Booking[] = [
   { id: 'BK-28465', customer: 'Maya Villanueva', bookedAt: daysAgo(300), scheduledAt: daysAgo(-3), service: 'Counseling Session', category: 'Counseling', amount: 3200, status: 'Confirmed' }
 ];
 
-const reasonColors = ['#2e3192', '#ee1c25', '#f59e0b', '#6366f1', '#94a3b8'];
+const reasonColors = ['#2e3192', '#ee1c25', '#fef200', 'rgba(46, 49, 146, 0.62)', 'rgba(238, 28, 37, 0.58)'];
 const rangeLabels: Record<RangeKey, string> = { '7d': 'Last 7 days', '30d': 'Last 30 days', ytd: 'Year to date', custom: 'Custom range' };
 const money = (amount: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(amount);
 const compact = (value: number) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
@@ -97,9 +97,9 @@ export default function AnalyticsPage() {
     return [...grouped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   }, [filtered]);
   const distribution: { name: BookingStatus; value: number; color: string }[] = [
-    { name: 'Confirmed', value: filtered.filter((item) => item.status === 'Confirmed').length, color: '#16a34a' },
+    { name: 'Confirmed', value: filtered.filter((item) => item.status === 'Confirmed').length, color: '#2e3192' },
     { name: 'Completed', value: counts.completed, color: '#2e3192' },
-    { name: 'Pending', value: counts.pending, color: '#f59e0b' },
+    { name: 'Pending', value: counts.pending, color: '#fef200' },
     { name: 'Canceled', value: counts.canceled, color: '#ee1c25' }
   ];
   const reasonMax = Math.max(1, ...reasons.map(([, amount]) => amount));
@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
           <article className={`rounded-2xl border p-5 shadow-[0_12px_36px_rgba(46,49,146,0.05)] sm:p-6 ${card}`}>
             <div className="flex items-start justify-between"><div><h2 className="text-sm font-extrabold">Revenue at risk</h2><p className={`mt-1 text-xs ${muted}`}>Estimated value of canceled bookings</p></div><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#ee1c25]/[0.08] text-[#ee1c25]"><TrendingDown size={17} /></span></div>
             <p className="mt-6 text-3xl font-extrabold tracking-tight text-[#ee1c25]">{money(counts.lost)}</p><p className={`mt-1 text-xs ${muted}`}>{counts.canceled} canceled bookings in {rangeLabels[range].toLowerCase()}</p>
-            <div className={`mt-6 rounded-xl border border-amber-200/70 bg-amber-50/70 p-3.5 text-xs leading-5 text-amber-900 ${dark ? 'dark-risk' : ''}`}><strong className="flex items-center gap-2"><Activity size={14} />Recovery opportunity</strong><p className="mt-1">Consider reminders and flexible rescheduling to reduce preventable cancellations.</p></div>
+            <div className={`mt-6 rounded-xl border border-[#fef200]/60 bg-[#fef200]/[0.12] p-3.5 text-xs leading-5 text-slate-800 ${dark ? 'dark-risk' : ''}`}><strong className="flex items-center gap-2"><Activity size={14} />Recovery opportunity</strong><p className="mt-1">Consider reminders and flexible rescheduling to reduce preventable cancellations.</p></div>
           </article>
         </section>
 
@@ -177,11 +177,11 @@ export default function AnalyticsPage() {
 }
 
 function Metric({ icon: Icon, label, value, detail, growth, positive = false, alert = false, dark }: { icon: typeof TicketCheck; label: string; value: string; detail: string; growth: string; positive?: boolean; alert?: boolean; dark: boolean }) {
-  return <article className={`rounded-2xl border p-5 shadow-[0_12px_36px_rgba(46,49,146,0.05)] ${dark ? 'border-slate-700 bg-[#1f2937]' : 'border-[#2e3192]/15 bg-white'}`}><div className="flex items-start justify-between"><div><p className={`text-xs font-semibold ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p><p className={`mt-2 text-2xl font-extrabold tracking-tight ${alert ? 'text-[#ee1c25]' : dark ? 'text-white' : 'text-slate-800'}`}>{value}</p></div><span className={`grid h-10 w-10 place-items-center rounded-xl ${alert ? 'bg-[#ee1c25]/[0.08] text-[#ee1c25]' : 'bg-[#2e3192]/[0.06] text-[#2e3192]'}`}><Icon size={18} /></span></div><div className="mt-4 flex flex-wrap items-center justify-between gap-1 text-[10px]"><span className={dark ? 'text-slate-500' : 'text-slate-400'}>{detail}</span><span className={`inline-flex items-center gap-1 font-bold ${alert ? 'text-[#b9151c]' : positive ? 'text-emerald-600' : dark ? 'text-slate-300' : 'text-slate-600'}`}>{positive ? <TrendingUp size={12} /> : alert ? <TrendingDown size={12} /> : null}{growth}</span></div></article>;
+  return <article className={`rounded-2xl border p-5 shadow-[0_12px_36px_rgba(46,49,146,0.05)] ${dark ? 'border-slate-700 bg-[#1f2937]' : 'border-[#2e3192]/15 bg-white'}`}><div className="flex items-start justify-between"><div><p className={`text-xs font-semibold ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p><p className={`mt-2 text-2xl font-extrabold tracking-tight ${alert ? 'text-[#ee1c25]' : dark ? 'text-white' : 'text-slate-800'}`}>{value}</p></div><span className={`grid h-10 w-10 place-items-center rounded-xl ${alert ? 'bg-[#ee1c25]/[0.08] text-[#ee1c25]' : 'bg-[#2e3192]/[0.06] text-[#2e3192]'}`}><Icon size={18} /></span></div><div className="mt-4 flex flex-wrap items-center justify-between gap-1 text-[10px]"><span className={dark ? 'text-slate-500' : 'text-slate-400'}>{detail}</span><span className={`inline-flex items-center gap-1 font-bold ${alert ? 'text-[#ee1c25]' : positive ? 'text-[#2e3192]' : dark ? 'text-slate-300' : 'text-slate-600'}`}>{positive ? <TrendingUp size={12} /> : alert ? <TrendingDown size={12} /> : null}{growth}</span></div></article>;
 }
 
 function StatusBadge({ status }: { status: BookingStatus }) {
-  const styles: Record<BookingStatus, string> = { Confirmed: 'bg-emerald-50 text-emerald-700', Completed: 'bg-[#2e3192]/[0.07] text-[#2e3192]', Pending: 'bg-[#fff9b8] text-amber-800', Canceled: 'bg-[#ee1c25]/[0.08] text-[#b9151c]' };
+  const styles: Record<BookingStatus, string> = { Confirmed: 'bg-[#2e3192]/[0.08] text-[#2e3192]', Completed: 'bg-[#2e3192]/[0.14] text-[#2e3192]', Pending: 'bg-[#fef200]/[0.35] text-slate-800', Canceled: 'bg-[#ee1c25]/[0.08] text-[#ee1c25]' };
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-bold ${styles[status]}`}>{status}</span>;
 }
 

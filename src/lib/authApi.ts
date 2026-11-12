@@ -7,7 +7,7 @@ export interface AuthUser {
   lname: string;
   email: string;
   username: string;
-  role: 'user' | 'admin';
+  role: 'super_admin' | 'admin' | 'booking_officer' | 'congressional_officer';
   status: 'Active' | 'Inactive' | 'Pending';
   office?: string;
   region?: string;

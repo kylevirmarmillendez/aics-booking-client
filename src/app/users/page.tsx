@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, ArrowDownUp, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock3, Eye, Filter, LoaderCircle, Plus, Search, ShieldAlert, ShieldCheck, Trash2, UserRound, UsersRound } from 'lucide-react';
-import { type UserRecord, type UserRole, type UserStatus } from '@/lib/users';
+import { USER_ROLE_LABELS, type UserRecord, type UserRole, type UserStatus } from '@/lib/users';
 import { ApiRequestError, deleteUser, getUsers } from '@/lib/usersApi';
 
 const PAGE_SIZE = 6;
 
 function StatusPill({ status }: { status: UserStatus }) {
   const styles: Record<UserStatus, string> = {
-    Active: 'bg-emerald-50 text-emerald-700 ring-emerald-700/15',
-    Inactive: 'bg-[#ee1c25]/[0.07] text-[#b9151c] ring-[#ee1c25]/20',
-    Pending: 'bg-[#fff9b8] text-slate-700 ring-[#fef200]/70'
+    Active: 'bg-[#2e3192]/[0.08] text-[#2e3192] ring-[#2e3192]/20',
+    Inactive: 'bg-[#ee1c25]/[0.07] text-[#ee1c25] ring-[#ee1c25]/20',
+    Pending: 'bg-[#fef200]/[0.35] text-slate-800 ring-[#fef200]'
   };
   const Icon = status === 'Active' ? CircleCheck : status === 'Pending' ? Clock3 : ShieldAlert;
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${styles[status]}`}><Icon size={13} aria-hidden="true" />{status}</span>;
@@ -69,7 +69,7 @@ export default function UsersPage() {
   const pageCount = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const visibleUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeCount = users.filter((user) => user.status === 'Active').length;
-  const adminCount = users.filter((user) => user.role === 'admin').length;
+  const adminCount = users.filter((user) => user.role === 'admin' || user.role === 'super_admin').length;
 
   function updateSearch(value: string) { setSearch(value); setPage(1); }
 
@@ -88,8 +88,8 @@ export default function UsersPage() {
 
       <section className="mb-7 grid gap-4 sm:grid-cols-3" aria-label="User management summary">
         <SummaryCard icon={UsersRound} label="Total accounts" value={users.length} note="Across all offices" />
-        <SummaryCard icon={CircleCheck} label="Active accounts" value={activeCount} note="Currently enabled" iconClass="text-emerald-700 bg-emerald-50" />
-        <SummaryCard icon={ShieldCheck} label="Administrators" value={adminCount} note="Elevated access" iconClass="text-[#2e3192] bg-[#2e3192]/[0.06]" />
+        <SummaryCard icon={CircleCheck} label="Active accounts" value={activeCount} note="Currently enabled" iconClass="text-[#2e3192] bg-[#2e3192]/[0.08]" />
+        <SummaryCard icon={ShieldCheck} label="Admin roles" value={adminCount} note="Super Admin and Admin" iconClass="text-[#2e3192] bg-[#2e3192]/[0.06]" />
       </section>
 
       {loadError && <div role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-[#ee1c25]/20 bg-[#ee1c25]/[0.05] p-4 text-sm text-[#b9151c]"><AlertCircle size={18} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Backend request failed</p><p className="mt-1">{loadError}</p><p className="mt-1 text-xs">Confirm the Express API and MongoDB are running. See the client README for the API URL setting.</p></div></div>}
@@ -109,8 +109,8 @@ export default function UsersPage() {
             <label className="relative">
               <Filter size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <span className="sr-only">Filter by role</span>
-              <select value={role} onChange={(event) => { setRole(event.target.value as 'all' | UserRole); setPage(1); }} className="h-10 w-full appearance-none rounded-xl border border-[#2e3192]/20 bg-white pl-9 pr-9 text-sm text-slate-700 focus:border-[#2e3192] focus:outline-none focus:ring-4 focus:ring-[#2e3192]/10 sm:w-36">
-                <option value="all">All roles</option><option value="admin">Admin</option><option value="user">User</option>
+              <select value={role} onChange={(event) => { setRole(event.target.value as 'all' | UserRole); setPage(1); }} className="h-10 w-full appearance-none rounded-xl border border-[#2e3192]/20 bg-white pl-9 pr-9 text-sm text-slate-700 focus:border-[#2e3192] focus:outline-none focus:ring-4 focus:ring-[#2e3192]/10 sm:w-52">
+                <option value="all">All roles</option>{Object.entries(USER_ROLE_LABELS).map(([roleValue, label]) => <option key={roleValue} value={roleValue}>{label}</option>)}
               </select>
               <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             </label>
@@ -139,7 +139,7 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4"><p className="text-sm font-medium text-slate-700">{user.office}</p><p className="mt-0.5 text-xs text-slate-500">{user.region}</p></td>
-                  <td className="px-4 py-4"><span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${user.role === 'admin' ? 'bg-[#2e3192]/[0.07] text-[#2e3192]' : 'bg-slate-100 text-slate-600'}`}>{user.role === 'admin' ? 'Admin' : 'User'}</span></td>
+                  <td className="px-4 py-4"><span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${user.role === 'super_admin' ? 'bg-[#2e3192] text-white' : user.role === 'admin' ? 'bg-[#2e3192]/[0.07] text-[#2e3192]' : 'bg-slate-100 text-slate-600'}`}>{USER_ROLE_LABELS[user.role]}</span></td>
                   <td className="px-4 py-4"><StatusPill status={user.status} /></td>
                   <td className="px-4 py-4 text-sm text-slate-600">{user.lastActive}</td>
                   <td className="px-5 py-4 text-right"><div className="inline-flex items-center gap-2"><button type="button" onClick={() => router.push(`/users/${encodeURIComponent(user.id)}`)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e3192]/20 bg-white px-3 text-xs font-semibold text-[#2e3192] transition hover:bg-[#2e3192]/[0.04]"><Eye size={14} /> View profile</button><button type="button" onClick={() => handleDelete(user)} disabled={deletingId === user.id} aria-label={`Delete ${user.fname} ${user.lname}`} className="grid h-9 w-9 place-items-center rounded-lg border border-[#ee1c25]/20 text-[#b9151c] transition hover:bg-[#ee1c25]/[0.05] disabled:opacity-50">{deletingId === user.id ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}</button></div></td>

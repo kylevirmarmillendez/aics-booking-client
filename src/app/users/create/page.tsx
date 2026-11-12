@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useMemo, useState } from 'react';
-import { AlertCircle, ArrowLeft, Building2, Check, CheckCircle2, ChevronDown, Eye, EyeOff, KeyRound, Mail, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
-import { offices, type UserRole, type UserStatus } from '@/lib/users';
+import { FormEvent, useEffect, useState } from 'react';
+import { AlertCircle, ArrowLeft, Check, CheckCircle2, ChevronDown, Eye, EyeOff, KeyRound, Mail, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
+import { USER_ROLE_LABELS, type UserRole, type UserStatus } from '@/lib/users';
 import { ApiRequestError, createUser } from '@/lib/usersApi';
+import { getOffices, type OfficeRecord } from '@/lib/officesApi';
 
 type FormValues = {
   fname: string;
@@ -23,7 +24,7 @@ type FormValues = {
 };
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
-const initialValues: FormValues = { fname: '', mname: '', lname: '', email: '', username: '', phone: '', region: '', office: '', role: 'user', status: 'Active', password: '', confirmPassword: '' };
+const initialValues: FormValues = { fname: '', mname: '', lname: '', email: '', username: '', phone: '', region: '', office: '', role: 'booking_officer', status: 'Active', password: '', confirmPassword: '' };
 
 export default function UserCreatePage() {
   const router = useRouter();
@@ -32,8 +33,18 @@ export default function UserCreatePage() {
   const [alert, setAlert] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const regions = useMemo(() => Array.from(new Set(offices.map((office) => office.region))), []);
-  const availableOffices = offices.filter((office) => !values.region || office.region === values.region);
+  const [officeOptions, setOfficeOptions] = useState<OfficeRecord[]>([]);
+  const [officesLoading, setOfficesLoading] = useState(true);
+  const [officesError, setOfficesError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    getOffices()
+      .then((records) => { if (active) setOfficeOptions(records.filter((office) => office.active)); })
+      .catch((error: unknown) => { if (active) setOfficesError(error instanceof Error ? error.message : 'Unable to load offices.'); })
+      .finally(() => { if (active) setOfficesLoading(false); });
+    return () => { active = false; };
+  }, []);
   const passwordChecks = [
     { label: 'At least 8 characters', valid: values.password.length >= 8 },
     { label: 'One uppercase letter', valid: /[A-Z]/.test(values.password) },
@@ -53,8 +64,7 @@ export default function UserCreatePage() {
     if (!values.lname.trim()) next.lname = 'Last name is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) next.email = 'Enter a valid email address.';
     if (!/^[a-zA-Z0-9]{3,30}$/.test(values.username.trim())) next.username = 'Use 3–30 letters and numbers only.';
-    if (!values.region) next.region = 'Select a region.';
-    if (!values.office) next.office = 'Select an assigned office.';
+    if (values.role === 'booking_officer' && !values.office) next.office = 'Select an assigned office.';
     if (passwordChecks.some((check) => !check.valid)) next.password = 'Meet all password requirements.';
     if (values.confirmPassword !== values.password) next.confirmPassword = 'Passwords do not match.';
     return next;
@@ -127,17 +137,17 @@ export default function UserCreatePage() {
         </section>
 
         <section className="rounded-2xl border border-[#2e3192]/15 bg-white p-5 shadow-[0_12px_36px_rgba(46,49,146,0.04)] sm:p-7">
-          <div className="mb-6 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#2e3192]/[0.06] text-[#2e3192]"><Building2 size={18} /></span><div><h2 className="text-base font-bold text-slate-800">Office assignment</h2><p className="mt-0.5 text-xs text-slate-500">Choose the user's region and primary office</p></div></div>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Region" required error={errors.region}><Select value={values.region} invalid={!!errors.region} onChange={(value) => { update('region', value); update('office', ''); }}><option value="">Select a region</option>{regions.map((region) => <option key={region} value={region}>{region}</option>)}</Select></Field>
-            <Field label="Assigned office" required error={errors.office}><Select value={values.office} invalid={!!errors.office} onChange={(value) => update('office', value)}><option value="">Select an office</option>{availableOffices.map((office) => <option key={office.name} value={office.name}>{office.name}</option>)}</Select></Field>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-[#2e3192]/15 bg-white p-5 shadow-[0_12px_36px_rgba(46,49,146,0.04)] sm:p-7">
           <div className="mb-6 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#fff9b8] text-[#2e3192]"><KeyRound size={18} /></span><div><h2 className="text-base font-bold text-slate-800">Account access</h2><p className="mt-0.5 text-xs text-slate-500">Set a role, status, and initial password</p></div></div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Role" required><Select value={values.role} onChange={(value) => update('role', value as UserRole)}><option value="user">User</option><option value="admin">Administrator</option></Select></Field>
+            <Field label="Role" required><Select value={values.role} onChange={(value) => { update('role', value as UserRole); if (value !== 'booking_officer') { update('office', ''); update('region', ''); } }}>{Object.entries(USER_ROLE_LABELS).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</Select></Field>
+            {values.role === 'booking_officer' && <Field label="Assigned office" required error={errors.office} className="sm:col-span-2"><Select value={values.office} invalid={!!errors.office} disabled={officesLoading || officeOptions.length === 0} onChange={(officeName) => {
+              const office = officeOptions.find((item) => item.name === officeName);
+              update('office', officeName);
+              update('region', office?.province ?? '');
+            }}>
+              <option value="">{officesLoading ? 'Loading offices…' : 'Select an office'}</option>
+              {officeOptions.map((office) => <option key={office.slug} value={office.name}>{office.name}{office.city ? ` — ${office.city}` : ''}</option>)}
+            </Select>{officesError && <p className="mt-1.5 text-xs font-medium text-[#b9151c]">{officesError}</p>}</Field>}
             <Field label="Account status" required><Select value={values.status} onChange={(value) => update('status', value as UserStatus)}><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Pending">Pending</option></Select></Field>
             <Field label="Initial password" required error={errors.password} className="sm:col-span-2"><div className="relative"><input type={showPassword ? 'text' : 'password'} value={values.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" placeholder="Enter a strong password" className={`${inputClass(!!errors.password)} pr-12`} /><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-[#2e3192]">{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{passwordChecks.map((check) => <p key={check.label} className={`flex items-center gap-2 text-xs ${check.valid ? 'text-emerald-700' : 'text-slate-400'}`}>{check.valid ? <CheckCircle2 size={14} /> : <span className="h-3.5 w-3.5 rounded-full border border-slate-300" />}{check.label}</p>)}</div></Field>
             <Field label="Confirm password" required error={errors.confirmPassword}><input type={showPassword ? 'text' : 'password'} value={values.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} autoComplete="new-password" placeholder="Re-enter password" className={inputClass(!!errors.confirmPassword)} /></Field>
@@ -159,6 +169,6 @@ function Field({ label, required, hint, error, className = '', children }: { lab
   return <div className={className}><label className="mb-2 block text-sm font-semibold text-slate-700">{label}{required && <span className="ml-1 text-[#ee1c25]" aria-hidden="true">*</span>}</label>{children}{error ? <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#b9151c]"><AlertCircle size={13} />{error}</p> : hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}</div>;
 }
 
-function Select({ value, onChange, children, invalid = false }: { value: string; onChange: (value: string) => void; children: React.ReactNode; invalid?: boolean }) {
-  return <div className="relative"><select value={value} onChange={(event) => onChange(event.target.value)} className={`min-h-11 w-full appearance-none rounded-xl border ${invalid ? 'border-[#ee1c25]/50' : 'border-[#2e3192]/20'} bg-white px-3.5 pr-10 text-sm text-slate-800 focus:border-[#2e3192] focus:outline-none focus:ring-4 focus:ring-[#2e3192]/10`}>{children}</select><ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" /></div>;
+function Select({ value, onChange, children, invalid = false, disabled = false }: { value: string; onChange: (value: string) => void; children: React.ReactNode; invalid?: boolean; disabled?: boolean }) {
+  return <div className="relative"><select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={`min-h-11 w-full appearance-none rounded-xl border ${invalid ? 'border-[#ee1c25]/50' : 'border-[#2e3192]/20'} bg-white px-3.5 pr-10 text-sm text-slate-800 focus:border-[#2e3192] focus:outline-none focus:ring-4 focus:ring-[#2e3192]/10 disabled:cursor-not-allowed disabled:bg-slate-100`}>{children}</select><ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" /></div>;
 }

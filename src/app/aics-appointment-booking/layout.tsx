@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'DSWD AICS Appointment Booking',
   description: 'Public appointment booking for DSWD Assistance to Individuals in Crisis Situations.'
