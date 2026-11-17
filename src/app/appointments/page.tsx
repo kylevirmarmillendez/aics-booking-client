@@ -1,21 +1,29 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, LoaderCircle, Search, UserX } from 'lucide-react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, LoaderCircle, LockKeyhole, Search, UserX } from 'lucide-react';
+import { lookupBooking, type PublicAppointment } from '@/lib/bookingApi';
 import { getAppointments, type AppointmentRecord, updateAppointmentStatus } from '@/lib/officesApi';
 
 const PAGE_SIZE = 10;
 type StatusFilter = 'All' | AppointmentRecord['status'];
+type ManagedAppointmentSummary = Pick<PublicAppointment, 'appointmentCode' | 'fullName' | 'officeName' | 'assistanceType' | 'appointmentDate' | 'timeSlot' | 'status' | 'canCancel'>;
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [actionError, setActionError] = useState('');
   const [updatingId, setUpdatingId] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('All');
   const [page, setPage] = useState(1);
+  const [lookupCode, setLookupCode] = useState('');
+  const [lookupCell, setLookupCell] = useState('');
+  const [lookupResult, setLookupResult] = useState<ManagedAppointmentSummary | null>(null);
+  const [lookupError, setLookupError] = useState('');
+  const [lookupMessage, setLookupMessage] = useState('');
+  const [lookingUp, setLookingUp] = useState(false);
+  const manageSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -36,16 +44,62 @@ export default function AppointmentsPage() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  async function markAttendance(appointment: AppointmentRecord, nextStatus: 'Arrived' | 'No-show') {
+  async function submitLookup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLookupError('');
+    setLookupMessage('');
+    setLookupResult(null);
+    if (!/^AICS-[A-Z]{3}-\d{4}-[A-Z0-9]{5}$/i.test(lookupCode.trim()) || !/^09\d{9}$/.test(lookupCell.trim())) {
+      setLookupError('Enter a valid reference code and the 11-digit mobile number used for booking.');
+      return;
+    }
+    setLookingUp(true);
+    try {
+      const result = await lookupBooking({ appointmentCode: lookupCode.trim().toUpperCase(), cellNumber: lookupCell.trim() });
+      setLookupResult(result.appointment);
+    } catch (error) {
+      setLookupError(error instanceof Error ? error.message : 'The appointment could not be checked.');
+    } finally {
+      setLookingUp(false);
+    }
+  }
+
+  function manageListedAppointment(appointment: AppointmentRecord) {
+    setLookupCode(appointment.appointmentCode);
+    setLookupResult({
+      appointmentCode: appointment.appointmentCode,
+      fullName: appointment.fullName,
+      officeName: appointment.officeName ?? '',
+      assistanceType: appointment.typeOfAssistance,
+      appointmentDate: appointment.appointmentDateKey || appointment.appointmentDateTimeSlot,
+      timeSlot: appointment.timeSlot || '',
+      status: appointment.status,
+      canCancel: false
+    });
+    setLookupError('');
+    setLookupMessage('Selected from the appointment list.');
+    manageSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function markManagedAttendance(nextStatus: 'Arrived' | 'No-show') {
+    if (!lookupResult) return;
+    const appointment = appointments.find((item) => item.appointmentCode === lookupResult.appointmentCode);
+    if (!appointment) {
+      setLookupError('This appointment is not available in the current appointment list.');
+      return;
+    }
     const action = nextStatus === 'Arrived' ? 'mark this appointment as arrived' : 'mark this appointment as a no-show';
     if (!window.confirm(`Are you sure you want to ${action}?`)) return;
     setUpdatingId(appointment.id);
-    setActionError('');
+    setLookupError('');
+    setLookupMessage('');
     try {
       const updated = await updateAppointmentStatus(appointment.id, nextStatus);
       setAppointments((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setLookupResult((current) => current ? { ...current, status: updated.status, canCancel: false } : current);
+      setLookupMessage(nextStatus === 'Arrived' ? 'Appointment marked as arrived.' : 'Appointment marked as a no-show.');
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Unable to update the appointment status.');
+      setLookupError(error instanceof Error ? error.message : 'The appointment status could not be updated.');
     } finally {
       setUpdatingId('');
     }
@@ -62,7 +116,32 @@ export default function AppointmentsPage() {
         <div className="rounded-xl border border-[#2e3192]/15 bg-white px-4 py-3 text-sm"><span className="font-bold text-[#2e3192]">{filtered.length}</span><span className="ml-2 text-slate-500">appointments</span></div>
       </header>
 
-      {(loadError || actionError) && <div role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-[#ee1c25]/20 bg-[#ee1c25]/[0.05] p-4 text-sm text-[#b9151c]"><AlertCircle size={18} className="mt-0.5 shrink-0" /><p>{actionError || loadError}</p></div>}
+      <section ref={manageSectionRef} id="manage-appointment" className="mb-6 scroll-mt-6 overflow-hidden rounded-2xl border border-[#2e3192]/15 bg-white shadow-[0_12px_36px_rgba(46,49,146,0.06)]">
+        <div className="bg-[#2e3192] px-5 py-5 text-white sm:px-7">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-[#fef200]"><Search size={19} /></span>
+            <div><h2 className="text-lg font-extrabold">Manage an appointment</h2><p className="mt-1 text-xs text-white/70">Find an existing booking and update its attendance status.</p></div>
+          </div>
+        </div>
+        <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+          <form onSubmit={submitLookup} className="space-y-4">
+            <div><label htmlFor="lookupCode" className="block text-sm font-semibold text-slate-700">Appointment reference code <span className="ml-1 text-[#ee1c25]" aria-label="required">*</span></label><input id="lookupCode" required value={lookupCode} onChange={(event) => setLookupCode(event.target.value.toUpperCase())} placeholder="AICS-HOS-2026-ABCDE" className="mt-2 h-12 w-full rounded-xl border border-[#2e3192]/20 bg-white px-3.5 font-mono text-sm tracking-wide text-slate-800 outline-none transition placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[#2e3192] focus:ring-4 focus:ring-[#2e3192]/10" /></div>
+            <div><label htmlFor="lookupCell" className="block text-sm font-semibold text-slate-700">Cell number used for booking <span className="ml-1 text-[#ee1c25]" aria-label="required">*</span></label><input id="lookupCell" type="tel" inputMode="numeric" required pattern="09[0-9]{9}" maxLength={11} value={lookupCell} onChange={(event) => setLookupCell(event.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09123456789" className="mt-2 h-12 w-full rounded-xl border border-[#2e3192]/20 bg-white px-3.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#2e3192] focus:ring-4 focus:ring-[#2e3192]/10" /></div>
+            <button type="submit" disabled={lookingUp} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#2e3192] px-4 text-sm font-bold text-white transition hover:bg-[#23256f] disabled:opacity-60">{lookingUp ? <><LoaderCircle size={16} className="animate-spin" />Finding…</> : <><Search size={16} />Find appointment</>}</button>
+            {lookupError && <p role="alert" className="rounded-xl bg-[#ee1c25]/[0.05] p-3 text-xs leading-5 text-[#b9151c]">{lookupError}</p>}
+          </form>
+          <div className="min-h-36 rounded-2xl border border-dashed border-[#2e3192]/20 bg-[#f6f7ff]/60 p-4 sm:p-5">
+            {lookupResult ? <>
+              <div className="mb-4 flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#2e3192]">Appointment found</p><p className="mt-1 font-mono text-lg font-extrabold tracking-wide text-[#2e3192]">{lookupResult.appointmentCode}</p></div><AppointmentStatus status={lookupResult.status} /></div>
+              <dl className="grid grid-cols-[90px_1fr] gap-x-3 gap-y-2 text-xs"><dt className="text-slate-400">Applicant</dt><dd className="text-right font-semibold text-slate-700">{lookupResult.fullName}</dd><dt className="text-slate-400">Office</dt><dd className="text-right font-semibold text-slate-700">{lookupResult.officeName || '—'}</dd><dt className="text-slate-400">Assistance</dt><dd className="text-right font-semibold text-slate-700">{lookupResult.assistanceType}</dd><dt className="text-slate-400">Date</dt><dd className="text-right font-semibold text-slate-700">{formatAppointmentDate(lookupResult.appointmentDate)}</dd><dt className="text-slate-400">Time</dt><dd className="text-right font-semibold text-slate-700">{lookupResult.timeSlot}</dd></dl>
+              {(lookupResult.status === 'Pending' || lookupResult.status === 'Confirmed') && <div className="mt-4 flex flex-wrap gap-2 border-t border-[#2e3192]/10 pt-4"><button type="button" onClick={() => markManagedAttendance('Arrived')} disabled={updatingId === appointments.find((item) => item.appointmentCode === lookupResult.appointmentCode)?.id} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#2e3192]/[0.08] px-3 text-xs font-semibold text-[#2e3192] transition hover:bg-[#2e3192]/[0.14] disabled:opacity-50">{updatingId === appointments.find((item) => item.appointmentCode === lookupResult.appointmentCode)?.id ? <LoaderCircle size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}Mark arrived</button><button type="button" onClick={() => markManagedAttendance('No-show')} disabled={updatingId === appointments.find((item) => item.appointmentCode === lookupResult.appointmentCode)?.id} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#ee1c25]/20 px-3 text-xs font-semibold text-[#b9151c] transition hover:bg-[#ee1c25]/[0.05] disabled:opacity-50">{updatingId === appointments.find((item) => item.appointmentCode === lookupResult.appointmentCode)?.id ? <LoaderCircle size={13} className="animate-spin" /> : <UserX size={13} />}Mark no-show</button></div>}
+              {lookupMessage && <p role="status" className="mt-3 text-xs font-medium text-emerald-700">{lookupMessage}</p>}
+            </> : <div className="grid h-full min-h-32 place-items-center text-center"><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-white text-[#2e3192]"><LockKeyhole size={17} /></span><p className="mt-3 text-sm font-semibold text-slate-600">Your booking details will appear here</p><p className="mt-1 text-xs text-slate-400">Only the matching reference code and mobile number can find an appointment.</p></div></div>}
+          </div>
+        </div>
+      </section>
+
+      {loadError && <div role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-[#ee1c25]/20 bg-[#ee1c25]/[0.05] p-4 text-sm text-[#b9151c]"><AlertCircle size={18} className="mt-0.5 shrink-0" /><p>{loadError}</p></div>}
 
       <section className="overflow-hidden rounded-2xl border border-[#2e3192]/15 bg-white shadow-[0_12px_36px_rgba(46,49,146,0.06)]">
         <div className="flex flex-col gap-4 border-b border-[#2e3192]/15 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -86,12 +165,7 @@ export default function AppointmentsPage() {
                     <td className="px-4 py-4"><span className="inline-flex items-center gap-1.5 text-sm text-slate-700"><CalendarDays size={14} className="text-[#2e3192]" />{formatAppointmentDate(appointment.appointmentDateKey || appointment.appointmentDateTimeSlot)}</span></td>
                     <td className="px-4 py-4"><span className="inline-flex items-center gap-1.5 text-sm text-slate-700"><Clock3 size={14} className="text-[#2e3192]" />{appointment.timeSlot || '—'}</span></td>
                     <td className="px-5 py-4"><AppointmentStatus status={appointment.status} /></td>
-                    <td className="px-5 py-4 text-right">
-                      {appointment.status === 'Pending' || appointment.status === 'Confirmed' ? <div className="inline-flex items-center gap-2">
-                        <button type="button" onClick={() => markAttendance(appointment, 'Arrived')} disabled={updatingId === appointment.id} className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#2e3192]/[0.08] px-2.5 text-xs font-semibold text-[#2e3192] transition hover:bg-[#2e3192]/[0.14] disabled:opacity-50" title="Mark applicant as arrived">{updatingId === appointment.id ? <LoaderCircle size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}Mark arrived</button>
-                        <button type="button" onClick={() => markAttendance(appointment, 'No-show')} disabled={updatingId === appointment.id} className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#ee1c25]/20 px-2.5 text-xs font-semibold text-[#b9151c] transition hover:bg-[#ee1c25]/[0.05] disabled:opacity-50" title="Mark applicant as a no-show">{updatingId === appointment.id ? <LoaderCircle size={13} className="animate-spin" /> : <UserX size={13} />}Mark no-show</button>
-                      </div> : <span className="text-xs text-slate-400">—</span>}
-                    </td>
+                    <td className="px-5 py-4 text-right"><button type="button" onClick={() => manageListedAppointment(appointment)} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2e3192]/20 px-3 text-xs font-semibold text-[#2e3192] transition hover:bg-[#2e3192]/[0.06] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e3192]/10"><Eye size={14} />Manage</button></td>
                   </tr>)}
                   {!rows.length && <tr><td colSpan={7} className="px-5 py-14 text-center"><CalendarDays size={24} className="mx-auto text-[#2e3192]/50" /><p className="mt-3 text-sm font-semibold text-slate-700">{loadError ? 'Appointments could not be loaded' : 'No appointments match these filters'}</p><p className="mt-1 text-xs text-slate-500">{loadError ? 'Check the API connection and refresh this page.' : 'Try a different search or status filter.'}</p></td></tr>}
                 </tbody>

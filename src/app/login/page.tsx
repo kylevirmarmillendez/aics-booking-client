@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
-import { ArrowRight, Eye, EyeOff, Fingerprint, HeartHandshake, LockKeyhole, Mail, ShieldCheck, UsersRound } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { AuthApiError, getCurrentUser, signIn } from '@/lib/authApi';
+import DswdLogo from '@/components/DswdLogo';
 
 type LoginErrors = { email?: string; password?: string };
 
@@ -55,28 +56,16 @@ export default function LoginPage() {
       <header className="relative z-10 border-b border-[#2e3192]/10 bg-white/90 backdrop-blur">
         <div className="flex h-[76px] w-full items-center justify-between px-5 sm:px-8 lg:px-12 2xl:px-16">
           <Link href="/login" className="flex items-center gap-3" aria-label="DSWD portal home">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#2e3192] text-[#fef200] shadow-sm"><HeartHandshake size={23} strokeWidth={2.2} /></span>
+            <DswdLogo />
             <span><span className="block text-sm font-extrabold tracking-tight text-slate-800">DSWD <span className="font-medium text-slate-500">| User Portal</span></span><span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.17em] text-[#2e3192]/65">Department of Social Welfare and Development</span></span>
           </Link>
           <div className="hidden items-center gap-2 text-xs font-semibold text-slate-500 sm:flex"><ShieldCheck size={16} className="text-[#2e3192]" /> Official workforce portal</div>
         </div>
       </header>
 
-      <div className="relative z-10 grid min-h-[calc(100vh-76px)] w-full items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14 lg:px-12 lg:py-14 xl:gap-20 2xl:px-16">
-        <section className="hidden w-full lg:block">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2e3192]/15 bg-white/80 px-3 py-1.5 text-xs font-bold text-[#2e3192]"><span className="h-2 w-2 rounded-full bg-[#fef200] ring-2 ring-[#2e3192]/10" /> AICS BOOKING & USER SERVICES</div>
-          <h1 className="text-[46px] font-extrabold leading-[1.12] tracking-tight text-slate-800 xl:text-[54px]">A more connected way to <span className="relative inline-block text-[#2e3192]">serve.<span className="absolute -bottom-1 left-0 h-2 w-full -rotate-1 rounded-full bg-[#fef200]/80" /></span></h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">Sign in to manage your account and access the services available to your office.</p>
-          <div className="mt-10 space-y-4">
-            <Feature icon={UsersRound} title="One staff directory" description="Find colleagues and view office assignments across the department." />
-            <Feature icon={ShieldCheck} title="Role-based access" description="Keep account permissions aligned with your responsibilities." />
-            <Feature icon={Fingerprint} title="Account protection" description="Support secure access with clear status and activity records." />
-          </div>
-          <div className="mt-12 flex items-center gap-3 border-t border-[#2e3192]/15 pt-5"><div className="grid h-9 w-9 place-items-center rounded-xl bg-[#fff9b8] text-[#2e3192]"><HeartHandshake size={17} /></div><p className="text-xs leading-5 text-slate-500">Working together for a society where the poor, vulnerable, and disadvantaged are empowered.</p></div>
-        </section>
-
-        <section className="mx-auto w-full max-w-none">
-          <div className="mb-6 text-center lg:hidden"><div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#2e3192] text-[#fef200]"><HeartHandshake size={27} /></div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#2e3192]/70">AICS Booking & User Services</p></div>
+      <div className="relative z-10 flex min-h-[calc(100vh-76px)] w-full items-center justify-center px-5 py-10 sm:px-8 lg:px-12 lg:py-14">
+        <section className="mx-auto w-full max-w-xl">
+          <div className="mb-6 text-center lg:hidden"><DswdLogo className="mx-auto mb-4 h-14 w-14" /><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#2e3192]/70">AICS Booking & User Services</p></div>
           <div className="rounded-[26px] border border-[#2e3192]/15 bg-white p-6 shadow-[0_24px_70px_rgba(46,49,146,0.12)] sm:p-9">
             <div className="mb-7"><div className="mb-5 hidden h-1.5 w-12 rounded-full bg-[#fef200] lg:block" /><p className="text-sm font-bold text-[#2e3192]">Welcome back</p><h2 className="mt-1.5 text-2xl font-extrabold tracking-tight text-slate-800">Sign in to your account</h2><p className="mt-2 text-sm leading-6 text-slate-500">Use your official DSWD account credentials to continue.</p></div>
 
@@ -100,8 +89,4 @@ export default function LoginPage() {
       </div>
     </main>
   );
-}
-
-function Feature({ icon: Icon, title, description }: { icon: typeof UsersRound; title: string; description: string }) {
-  return <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#2e3192]/10 bg-white text-[#2e3192]"><Icon size={18} /></span><div><h3 className="text-sm font-bold text-slate-800">{title}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{description}</p></div></div>;
 }

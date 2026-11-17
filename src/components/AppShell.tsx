@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, Building2, CalendarDays, ClipboardList, LoaderCircle, LogOut, ShieldCheck, UsersRound } from 'lucide-react';
+import { BarChart3, Building2, CalendarDays, ClipboardList, LoaderCircle, LogOut, Menu, ShieldCheck, UsersRound, X } from 'lucide-react';
 import { type AuthUser, getCurrentUser, signOut } from '@/lib/authApi';
+import DswdLogo from '@/components/DswdLogo';
 
 type StaffRole = AuthUser['role'];
 
@@ -33,11 +34,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authError, setAuthError] = useState('');
   const [signingOut, setSigningOut] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setMobileNavOpen(false); }, [pathname]);
 
   useEffect(() => {
-    if (pathname === '/login' || pathname === '/register' || pathname === '/aics-appointment-booking') {
+    if (pathname === '/login' || pathname === '/register') {
       setCheckingAuth(false);
       return;
     }
@@ -70,9 +73,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => { active = false; };
   }, [pathname, router]);
 
-  if (pathname === '/login' || pathname === '/register' || pathname === '/aics-appointment-booking') return <>{children}</>;
+  if (pathname === '/login' || pathname === '/register') return <>{children}</>;
 
-  if (!mounted || checkingAuth) {
+  if (!mounted || checkingAuth || !user) {
     return <div className="grid min-h-screen place-items-center bg-[#f6f7ff] text-sm text-slate-500"><span className="flex items-center gap-3"><LoaderCircle size={20} className="animate-spin text-[#2e3192]" />Verifying secure session…</span></div>;
   }
 
@@ -101,17 +104,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-[#2e3192]/15 bg-white">
         <div className="flex h-[74px] w-full items-center justify-between px-4 sm:px-7 lg:px-10">
           <Link href={user ? ROLE_HOME[user.role] ?? '/login' : '/login'} className="flex items-center gap-3" aria-label="DSWD staff portal home">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#2e3192] text-[#fef200]"><Building2 size={22} /></span>
-            <span>
+            <DswdLogo />
+            <span className="min-w-0">
               <span className="block text-sm font-extrabold tracking-tight text-slate-800">DSWD <span className="font-medium text-slate-500">| Staff Portal</span></span>
-              <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#2e3192]/65">Department of Social Welfare and Development</span>
+              <span className="mt-0.5 hidden text-[10px] font-bold uppercase tracking-[0.16em] text-[#2e3192]/65 sm:block">Department of Social Welfare and Development</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-2 rounded-full bg-[#fff9b8] px-3 py-2 text-xs font-semibold text-slate-700 sm:flex"><ShieldCheck size={15} className="text-[#2e3192]" />{user?.fname} {user?.lname}</div>
-            <button type="button" onClick={handleSignOut} disabled={signingOut} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e3192]/20 px-3 text-xs font-semibold text-slate-600 transition hover:border-[#ee1c25]/25 hover:bg-[#ee1c25]/[0.04] hover:text-[#b9151c] disabled:opacity-50"><LogOut size={14} />{signingOut ? 'Signing out…' : 'Sign out'}</button>
+            <button type="button" onClick={() => setMobileNavOpen((isOpen) => !isOpen)} aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileNavOpen} aria-controls="mobile-navigation" className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2e3192]/20 text-[#2e3192] transition hover:bg-[#2e3192]/[0.05] lg:hidden">{mobileNavOpen ? <X size={20} /> : <Menu size={20} />}</button>
+            <button type="button" onClick={handleSignOut} disabled={signingOut} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e3192]/20 px-3 text-xs font-semibold text-slate-600 transition hover:border-[#ee1c25]/25 hover:bg-[#ee1c25]/[0.04] hover:text-[#b9151c] disabled:opacity-50"><LogOut size={14} /><span className="hidden sm:inline">{signingOut ? 'Signing out…' : 'Sign out'}</span></button>
           </div>
         </div>
+        {mobileNavOpen && <nav id="mobile-navigation" aria-label="Workspace navigation" className="border-t border-[#2e3192]/10 bg-white px-4 py-4 lg:hidden">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+          {ROLE_ACCESS[user!.role].includes('/users') && <Link href="/users" onClick={() => setMobileNavOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${pathname?.startsWith('/users') ? 'bg-[#2e3192] text-white' : 'text-slate-600 hover:bg-[#2e3192]/[0.05] hover:text-[#2e3192]'}`}><UsersRound size={17} /> User management</Link>}
+          {ROLE_ACCESS[user!.role].includes('/analytics') && <Link href="/analytics" onClick={() => setMobileNavOpen(false)} className={`mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${pathname === '/analytics' ? 'bg-[#2e3192] text-white' : 'text-slate-600 hover:bg-[#2e3192]/[0.05] hover:text-[#2e3192]'}`}><BarChart3 size={17} /> Booking analytics</Link>}
+          {ROLE_ACCESS[user!.role].includes('/offices') && <Link href="/offices" onClick={() => setMobileNavOpen(false)} className={`mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${pathname?.startsWith('/offices') ? 'bg-[#2e3192] text-white' : 'text-slate-600 hover:bg-[#2e3192]/[0.05] hover:text-[#2e3192]'}`}><Building2 size={17} /> Offices</Link>}
+          {ROLE_ACCESS[user!.role].includes('/assistance-types') && <Link href="/assistance-types" onClick={() => setMobileNavOpen(false)} className={`mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${pathname?.startsWith('/assistance-types') ? 'bg-[#2e3192] text-white' : 'text-slate-600 hover:bg-[#2e3192]/[0.05] hover:text-[#2e3192]'}`}><ClipboardList size={17} /> Assistance types</Link>}
+          {ROLE_ACCESS[user!.role].includes('/appointments') && <Link href="/appointments" onClick={() => setMobileNavOpen(false)} className={`mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${pathname?.startsWith('/appointments') ? 'bg-[#2e3192] text-white' : 'text-slate-600 hover:bg-[#2e3192]/[0.05] hover:text-[#2e3192]'}`}><CalendarDays size={17} /> Appointment list</Link>}
+        </nav>}
       </header>
       <div className="grid min-h-[calc(100vh-74px)] w-full lg:grid-cols-[230px_minmax(0,1fr)]">
         <aside className="hidden border-r border-[#2e3192]/15 bg-white/70 p-5 lg:block">

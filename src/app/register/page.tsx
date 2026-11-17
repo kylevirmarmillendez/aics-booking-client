@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { AlertCircle, ArrowRight, Eye, EyeOff, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { AuthApiError, registerAccount } from '@/lib/authApi';
+import DswdLogo from '@/components/DswdLogo';
 
 type Fields = 'fname' | 'lname' | 'email' | 'username' | 'password' | 'confirmPassword';
 type Values = Record<Fields, string> & { mname: string };
@@ -75,7 +76,7 @@ export default function RegisterPage() {
     <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#f6f7ff] px-4 py-10 sm:px-8">
       <div className="pointer-events-none absolute -left-36 -top-40 h-[480px] w-[480px] rounded-full border-[80px] border-[#2e3192]/[0.035]" />
       <section className="relative w-full max-w-2xl rounded-[26px] border border-[#2e3192]/15 bg-white p-6 shadow-[0_24px_70px_rgba(46,49,146,0.12)] sm:p-9">
-        <Link href="/login" className="inline-flex items-center gap-3" aria-label="DSWD portal login"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#2e3192] text-[#fef200]"><HeartHandshake size={23} /></span><span className="text-sm font-extrabold text-slate-800">DSWD <span className="font-medium text-slate-500">| User Portal</span></span></Link>
+        <Link href="/login" className="inline-flex items-center gap-3" aria-label="DSWD portal login"><DswdLogo /><span className="text-sm font-extrabold text-slate-800">DSWD <span className="font-medium text-slate-500">| User Portal</span></span></Link>
         <div className="mb-6 mt-8"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e3192]/65">New account</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-800">Create your account</h1><p className="mt-2 text-sm text-slate-500">Your account will be securely stored by the user service.</p></div>
         {message && <div role="alert" className={`mb-5 flex gap-3 rounded-xl border p-3.5 text-sm ${Object.keys(errors).length ? 'border-[#ee1c25]/20 bg-[#ee1c25]/[0.05] text-[#b9151c]' : 'border-[#2e3192]/15 bg-[#f6f7ff] text-slate-700'}`}><AlertCircle size={17} className="mt-0.5 shrink-0" /><p>{message}</p></div>}
         <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">

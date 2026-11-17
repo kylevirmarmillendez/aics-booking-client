@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title">
+  <title id="title">DSWD logo</title>
+  <path fill="#2e3192" d="M11 11h13v29c0 3 2 6 5 7l20 9v22H31V62L16 51c-3-2-5-5-5-9V11Zm78 0H76v29c0 3-2 6-5 7l-20 9v22h18V62l15-11c3-2 5-5 5-9V11Z"/>
+  <path fill="#ee1c25" d="M27 11h46c4 0 7 3 7 7v22c0 4-2 7-6 9L50 61 26 49c-4-2-6-5-6-9V18c0-4 3-7 7-7Z"/>
+  <path fill="none" stroke="#fef200" stroke-linejoin="round" stroke-width="4" d="M5 5h90v69H5z"/>
+</svg>
